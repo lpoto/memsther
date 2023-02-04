@@ -1,0 +1,4 @@
+/target
+.nvim.lua
+config.toml
+.dev

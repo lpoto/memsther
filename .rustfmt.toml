@@ -1,0 +1,34 @@
+indent_style = "Block"
+tab_spaces = 4
+
+use_small_heuristics = "Off"
+max_width = 80
+array_width = 80
+chain_width = 80
+single_line_if_else_max_width = 80
+attr_fn_like_width = 80
+fn_call_width = 80
+comment_width = 80
+wrap_comments = true
+format_strings = true
+
+group_imports = "StdExternalCrate"
+reorder_imports = true
+reorder_impl_items = true
+merge_imports = true
+
+trailing_semicolon = true
+traling_comma = "Vertical"
+
+match_block_trailing_Comma = true
+match_arm_leading_pipes = "Always"
+
+fn_single_line = true
+empty_item_single_line = true
+control_brace_style = "AlwaysSameLine"
+remove_nested_parens = true
+overflow_delimited_expr = true
+normalize_comments = true
+use_try_shorthand = true
+where_single_line = true
+condense_wildcard_suffixes = true

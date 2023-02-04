@@ -1,0 +1,8 @@
+[discord]
+token="your-discord-token"
+
+[postgres]
+user="postgres"
+password="postgres"
+dbname="memsther"
+host="localhost"
