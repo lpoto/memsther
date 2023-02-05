@@ -4,8 +4,8 @@ name: Publish Latest Docker image
 
 on:
   push:
-    #branches:
-    #  - main
+    branches:
+      - main
 
 jobs:
   push_to_registry:
