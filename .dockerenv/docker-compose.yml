@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  memsther:
+    build:
+      context: ../
+      dockerfile: .dockerenv/Dockerfile
+    environment:
+      RUST_LOG: "warn,memsther=trace"
+    command: "-- /usr/conf/config.toml"
+    volumes:
+      - ../config.toml:/usr/conf/config.toml
+    depends_on:
+      - postgres
+    networks:
+      - memsther
+  postgres:
+    image: postgres:14.1-alpine
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+        - 5433:5432
+    environment:
+        POSTGRES_DB: memsther
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+    volumes:
+        - postgres_data:/var/lib/postgresql/data
+    networks:
+      - memsther
+
+networks:
+  memsther:
+volumes:
+  postgres_data:
