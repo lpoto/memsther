@@ -27,25 +27,36 @@ pub fn description() -> String { String::from("Send a meme") }
 /// one for the attachment. At least one of those two should be provided.
 pub async fn register(ctx: &Context) {
     log::trace!("Registering '{}' command ...", name());
-    match Command::create_global_application_command(&ctx.http, |command| {
-        command
-            .name(name())
-            .description(description())
-            .create_option(|option| {
-                option
-                    .name("attachment")
-                    .description("A file containing the meme")
-                    .kind(CommandOptionType::Attachment)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
-                    .name("content")
-                    .description("The optional content of the meme")
-                    .kind(CommandOptionType::String)
-                    .required(false)
-            })
-    })
+    match Command::create_global_application_command(
+        &ctx.http,
+        |mut command| {
+            for i in 0..4 {
+                let attachment = if i > 0 {
+                    format!("attachment{}", i)
+                } else {
+                    String::from("attachment")
+                };
+                command = command.create_option(|option| {
+                    option
+                        .name(attachment)
+                        .description("A file containing a meme")
+                        .kind(CommandOptionType::Attachment)
+                        .required(i == 0)
+                })
+            }
+            command = command
+                .name(name())
+                .description(description())
+                .create_option(|option| {
+                    option
+                        .name("content")
+                        .description("The optional content of the meme")
+                        .kind(CommandOptionType::String)
+                        .required(false)
+                });
+            command
+        },
+    )
     .await
     {
         | Ok(_) => log::info!("Registered '{}' slash command", name()),
@@ -54,11 +65,14 @@ pub async fn register(ctx: &Context) {
         }
     }
 }
-/// Handle the meme application command. This expects the command name to match the
-/// value returned from the `name()` function. Responds to the
+/// Handle the meme application command. This expects the command name to match
+/// the value returned from the `name()` function. Responds to the
 /// provided command with the provided attachment and content, also
 /// mentions the user who used the command.
-pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction) {
+pub async fn handle_command(
+    ctx: Context,
+    command: ApplicationCommandInteraction,
+) {
     log::trace!("Running '{}' command ...", name());
     // NOTE: ensure the correct application command interaction
     // has been passes to this function, as it depends on the
@@ -141,22 +155,26 @@ async fn respond_with_meme(
         name()
     );
 
+    let mut attachments_urls: Vec<String> = Vec::new();
+
     for option in command.data.options.iter() {
         match &option.resolved {
             | Some(CommandDataOptionValue::Attachment(attachment)) => {
-                return command
-                    .create_followup_message(&ctx.http, |message| {
-                        message
-                            .content(&content)
-                            .add_file(attachment.url.as_str())
-                    })
-                    .await
-                    .map_err(|err| err.to_string())
+                attachments_urls.push(attachment.url.clone())
             }
-            | _ => return Err(String::from("Failed to resolve an option")),
+            | _ => (),
         }
     }
-    Err("No attachment provided".to_string())
+    command
+        .create_followup_message(&ctx.http, |mut message| {
+            message = message.content(&content);
+            for url in attachments_urls.iter() {
+                message = message.add_file(url.as_str());
+            }
+            message
+        })
+        .await
+        .map_err(|err| err.to_string())
 }
 
 async fn remove_original_response_on_error(
