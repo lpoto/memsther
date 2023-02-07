@@ -32,11 +32,27 @@ pub async fn handle_reaction_add(
         }
         | Ok(message) => message,
     };
+
     let author_id =
         match get_meme_author_id(&ctx, &guild_id, &message.content).await {
             | Err(_) => return,
             | Ok(id) => UserId(id),
         };
+
+    // NOTE: ensure that the meme's author does not vote on it's
+    // their own meme
+    match reaction.user_id {
+        | Some(user_id) => {
+            if user_id == author_id {
+                log::trace!("User voted on his meme, not updating score");
+                return;
+            }
+        }
+        | None => {
+            log::trace!("No user id found in the reaction, not updating score");
+            return;
+        }
+    }
 
     match update_user_score(
         author_id,
@@ -81,6 +97,22 @@ pub async fn handle_reaction_remove(
             | Err(_) => return,
             | Ok(id) => UserId(id),
         };
+
+    // NOTE: ensure that the meme's author does not vote on it's
+    // their own meme
+    match reaction.user_id {
+        | Some(user_id) => {
+            if user_id == author_id {
+                log::trace!("User voted on his meme, not updating score");
+                return;
+            }
+        }
+        | None => {
+            log::trace!("No user id found in the reaction, not updating score");
+            return;
+        }
+    }
+
     match update_user_score(
         author_id,
         guild_id,
