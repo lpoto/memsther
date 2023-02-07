@@ -5,6 +5,8 @@ WORKDIR /usr/src/
 RUN apk update && apk add --no-cache \
     git \
     ca-certificates \
+    openssl \
+    libressl-dev \
     tzdata \
     gcc \
     musl-dev \
@@ -35,4 +37,3 @@ WORKDIR /target
 USER appuser
 
 ENTRYPOINT ["/target/memsther"]
-
