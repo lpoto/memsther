@@ -5,18 +5,15 @@ use serenity::{
         prelude::{
             command::CommandOptionType,
             interaction::{
-                application_command::{
-                    ApplicationCommandInteraction, CommandDataOptionValue,
-                },
+                application_command::ApplicationCommandInteraction,
                 MessageFlags,
             },
-            UserId,
         },
     },
     prelude::Context,
 };
 
-use crate::datastore;
+use crate::{datastore, util};
 
 pub fn name() -> String { String::from("score") }
 pub fn description() -> String { String::from("Get a user's score") }
@@ -73,13 +70,14 @@ pub async fn handle_command(
         | None => return,
     };
 
-    let (user_id, username) = match get_user_id(&command).await {
-        | Ok((user_id, username)) => (user_id, username),
-        | Err(why) => {
-            log::warn!("Failed to get user id: {}", why);
-            return;
-        }
-    };
+    let (user_id, username) =
+        match util::get_user_id_from_interaction(&command).await {
+            | Ok((user_id, username)) => (user_id, username),
+            | Err(why) => {
+                log::warn!("Failed to get user id: {}", why);
+                return;
+            }
+        };
     let score = match datastore::user::get_score(&pool, user_id, guild_id).await
     {
         | Err(why) => {
@@ -99,18 +97,4 @@ pub async fn handle_command(
     {
         log::warn!("Failed to respond to score command: {}", why);
     }
-}
-
-pub async fn get_user_id(
-    command: &ApplicationCommandInteraction,
-) -> Result<(UserId, String), String> {
-    for option in command.data.options.iter() {
-        match &option.resolved {
-            | Some(CommandDataOptionValue::User(user, _)) => {
-                return Ok((user.id, user.name.clone()))
-            }
-            | _ => return Err(String::from("Failed to resolve an option")),
-        }
-    }
-    Err("No attachment provided".to_string())
 }

@@ -10,5 +10,9 @@ of upvotes they recieve on their memes.
     - Reacting to the sent meme with thumbs-up will increase the author's score by 1
     - Reacting to the sent meme with thumbs-down will decrease the author's score by 1
 
+- `/link <link>` sends the provided link to the channel.
+    - Reacting to the sent link with thumbs-up will increase the author's score by 1
+    - Reacting to the sent link with thumbs-down will decrease the author's score by 1
+
 - `/score <user>` displays  the score of the provided user.
 

@@ -23,8 +23,8 @@ pub fn description() -> String { String::from("Send a meme") }
 
 /// Register the meme slash command. The command has the name
 /// and the description matching the values returned by `name()` and
-/// `description()`. It has 2 options, one for the text content of the meme, and
-/// one for the attachment. At least one of those two should be provided.
+/// `description()`. It has multiple options, one for the text content of the
+/// meme, and 4 for the attachments. At least one attachment should be provided.
 pub async fn register(ctx: &Context) {
     log::trace!("Registering '{}' command ...", name());
     match Command::create_global_application_command(
@@ -65,6 +65,7 @@ pub async fn register(ctx: &Context) {
         }
     }
 }
+
 /// Handle the meme application command. This expects the command name to match
 /// the value returned from the `name()` function. Responds to the
 /// provided command with the provided attachment and content, also
@@ -108,8 +109,7 @@ pub async fn handle_command(
         }
         | Ok(message) => {
             // NOTE: On successful meme response, react to the sent
-            // message with thumbs up. This will immediately add  +1
-            // score to the user who sent the meme.
+            // message with thumbs up and thumbs down.
             for reaction in
                 vec![util::get_thumbs_up(), util::get_thumbs_down()].iter()
             {

@@ -13,6 +13,8 @@ tokio = "1.0"
 refinery = {version = "0.8.7", features = ["tokio-postgres"] }
 env_logger = "0.10.0"
 log = "0.4.0"
+reqwest = "0.11.14"
+regex = "1.7.1"
 
 [dependencies.serenity]
 default-features = false
