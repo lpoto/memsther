@@ -110,11 +110,18 @@ pub async fn handle_command(
             // NOTE: On successful meme response, react to the sent
             // message with thumbs up. This will immediately add  +1
             // score to the user who sent the meme.
-            if let Err(why) = message
-                .react(&ctx.http, ReactionType::Unicode(util::get_thumbs_up()))
-                .await
+            for reaction in
+                vec![util::get_thumbs_up(), util::get_thumbs_down()].iter()
             {
-                log::warn!("Error when reaction to meme: {:?}", why);
+                if let Err(why) = message
+                    .react(
+                        &ctx.http,
+                        ReactionType::Unicode(reaction.to_string()),
+                    )
+                    .await
+                {
+                    log::warn!("Error when reaction to meme: {:?}", why);
+                }
             }
         }
     }
