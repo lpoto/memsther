@@ -58,8 +58,8 @@ pub async fn get_bot_message_author_id(
     }
     let prefix = s[..3].to_string();
     let suffix = s[21..35].to_string();
-    if !(prefix.eq("<@!") && suffix.starts_with("> just sent a meme")) {
-        return Err(String::from("Not a meme message"));
+    if !(prefix.eq("<@!") && suffix.starts_with("> just sent")) {
+        return Err(String::from("Not a memsther message"));
     };
     convert_user_id(ctx, guild_id, &s[3..21]).await
 }

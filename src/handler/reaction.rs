@@ -108,7 +108,7 @@ fn validate_author_id(
     let reaction_author_id = match reaction_author_id {
         | Some(user_id) => {
             if user_id == meme_author_id {
-                log::trace!("User voted on his meme, not updating score");
+                log::trace!("User voted on his message, not updating score");
                 return false;
             };
             user_id
