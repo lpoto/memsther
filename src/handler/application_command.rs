@@ -7,6 +7,7 @@ use serenity::{
     prelude::Context,
 };
 
+pub mod link;
 pub mod meme;
 pub mod score;
 
@@ -17,7 +18,7 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
         .await
         .map_err(|err| format!("Failed to fetch global commands: {:?}", err))?;
 
-    let to_register = vec![meme::name(), score::name()];
+    let to_register = vec![meme::name(), score::name(), link::name()];
 
     log::debug!("Registering slash commands ...");
     for command in commands.iter() {
@@ -39,6 +40,9 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
     if commands.iter().find(|command| command.name == score::name()).is_none() {
         score::register(ctx).await;
     };
+    if commands.iter().find(|command| command.name == link::name()).is_none() {
+        link::register(ctx).await;
+    };
 
     log::info!("Slash commands registered");
     return Ok(());
@@ -55,5 +59,7 @@ pub async fn handle_appliaction_command(
         meme::handle_command(ctx, command).await
     } else if name == score::name() {
         score::handle_command(ctx, command, pool).await
+    } else if name == link::name() {
+        link::handle_command(ctx, command).await
     };
 }

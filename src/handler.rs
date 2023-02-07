@@ -23,7 +23,7 @@ impl Handler {
     }
 }
 
-static mut BOT_USER_ID: Option<UserId> = None;
+pub static mut BOT_USER_ID: Option<UserId> = None;
 
 #[async_trait]
 impl EventHandler for Handler {
