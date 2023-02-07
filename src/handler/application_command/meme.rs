@@ -54,11 +54,14 @@ pub async fn register(ctx: &Context) {
         }
     }
 }
-/// Handle the meme application command. This expects the command name to match the
-/// value returned from the `name()` function. Responds to the
+/// Handle the meme application command. This expects the command name to match
+/// the value returned from the `name()` function. Responds to the
 /// provided command with the provided attachment and content, also
 /// mentions the user who used the command.
-pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction) {
+pub async fn handle_command(
+    ctx: Context,
+    command: ApplicationCommandInteraction,
+) {
     log::trace!("Running '{}' command ...", name());
     // NOTE: ensure the correct application command interaction
     // has been passes to this function, as it depends on the
@@ -96,11 +99,18 @@ pub async fn handle_command(ctx: Context, command: ApplicationCommandInteraction
             // NOTE: On successful meme response, react to the sent
             // message with thumbs up. This will immediately add  +1
             // score to the user who sent the meme.
-            if let Err(why) = message
-                .react(&ctx.http, ReactionType::Unicode(util::get_thumbs_up()))
-                .await
+            for reaction in
+                vec![util::get_thumbs_up(), util::get_thumbs_down()].iter()
             {
-                log::warn!("Error when reaction to meme: {:?}", why);
+                if let Err(why) = message
+                    .react(
+                        &ctx.http,
+                        ReactionType::Unicode(reaction.to_string()),
+                    )
+                    .await
+                {
+                    log::warn!("Error when reaction to meme: {:?}", why);
+                }
             }
         }
     }
