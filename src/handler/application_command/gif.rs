@@ -53,7 +53,7 @@ pub async fn register(ctx: &Context) {
 pub async fn handle_command(
     ctx: Context,
     command: ApplicationCommandInteraction,
-    tenor_token: &str,
+    giphy_token: &str,
 ) {
     log::trace!("Running '{}' command ...", name());
     // NOTE: ensure the correct application command interaction
@@ -85,8 +85,8 @@ pub async fn handle_command(
             return;
         }
     };
-    let tenor_url = get_tenor_url(keywords, tenor_token);
-    match get_gif_url(tenor_url).await {
+    let giphy_url = get_giphy_url(keywords, giphy_token);
+    match get_gif_url(giphy_url).await {
         | Ok(url) => respond_with_gif_url(&ctx, &command, url.as_str()).await,
         | Err(why) => {
             log::warn!("Failed to fetch a gif: {}", why);
@@ -155,22 +155,22 @@ async fn respond_on_error(
     };
 }
 
-async fn get_gif_url(tenor_url: String) -> Result<String, String> {
+async fn get_gif_url(giphy_url: String) -> Result<String, String> {
     let client = reqwest::Client::new();
     let res: Response =
-        client.get(tenor_url).send().await.map_err(|err| err.to_string())?;
+        client.get(giphy_url).send().await.map_err(|err| err.to_string())?;
     let gif_data: GifResponse =
         res.json().await.map_err(|err| err.to_string())?;
 
-    if gif_data.data.len() == 0 {
-        return Err(String::from("Found no gif results"));
+    match gif_data.data.choose(&mut thread_rng()) {
+        | Some(gif) => Ok(gif.url.clone()),
+        | None => Err(String::from("Found no gif results")),
     }
-    Ok(gif_data.data.choose(&mut thread_rng()).unwrap().url.clone())
 }
 
-fn get_tenor_url(keywords: String, token: &str) -> String {
+fn get_giphy_url(keywords: String, token: &str) -> String {
     format!(
-        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=25&lang=en",
+        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=5&lang=en",
         keywords, token
     )
 }

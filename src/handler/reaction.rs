@@ -119,7 +119,10 @@ fn validate_author_id(
         }
     };
     unsafe {
-        let bot_user_id = BOT_USER_ID.unwrap();
+        let bot_user_id = match BOT_USER_ID {
+            | Some(id) => id,
+            | None => return false,
+        };
         if bot_user_id == *reaction_author_id {
             log::trace!(
                 "Bot is the author of the reaction, not updating score"

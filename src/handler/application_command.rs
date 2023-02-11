@@ -70,6 +70,6 @@ pub async fn handle_appliaction_command(
     } else if name == link::name() {
         link::handle_command(ctx, command).await
     } else if name == gif::name() {
-        gif::handle_command(ctx, command, config.tenor.token.as_str()).await
+        gif::handle_command(ctx, command, config.giphy.token.as_str()).await
     };
 }
