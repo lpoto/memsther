@@ -4,7 +4,7 @@ use std::{fs, path::PathBuf};
 pub struct Configuration {
     pub postgres: Postgres,
     pub discord: Discord,
-    pub tenor: Tenor,
+    pub giphy: Giphy,
 }
 
 #[derive(serde::Deserialize)]
@@ -13,7 +13,7 @@ pub struct Discord {
 }
 
 #[derive(serde::Deserialize)]
-pub struct Tenor {
+pub struct Giphy {
     pub token: String,
 }
 

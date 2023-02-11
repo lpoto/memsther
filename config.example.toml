@@ -1,8 +1,8 @@
 [discord]
 token="<discord-token>"
 
-[tenor]
-token="<tenor-api-token>"
+[giphy]
+token="<giphy-api-token>"
 
 [postgres]
 user="postgres"
