@@ -7,6 +7,9 @@ use serenity::{
     prelude::Context,
 };
 
+use crate::configuration::Configuration;
+
+pub mod gif;
 pub mod link;
 pub mod meme;
 pub mod score;
@@ -18,7 +21,8 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
         .await
         .map_err(|err| format!("Failed to fetch global commands: {:?}", err))?;
 
-    let to_register = vec![meme::name(), score::name(), link::name()];
+    let to_register =
+        vec![meme::name(), score::name(), link::name(), gif::name()];
 
     log::debug!("Registering slash commands ...");
     for command in commands.iter() {
@@ -43,6 +47,9 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
     if commands.iter().find(|command| command.name == link::name()).is_none() {
         link::register(ctx).await;
     };
+    if commands.iter().find(|command| command.name == gif::name()).is_none() {
+        gif::register(ctx).await;
+    };
 
     log::info!("Slash commands registered");
     return Ok(());
@@ -52,6 +59,7 @@ pub async fn handle_appliaction_command(
     ctx: Context,
     command: ApplicationCommandInteraction,
     pool: &Pool,
+    config: &Configuration
 ) {
     log::trace!("Handling command interaction: {:?}", command.data.name,);
     let name = command.data.name.to_string();
@@ -61,5 +69,7 @@ pub async fn handle_appliaction_command(
         score::handle_command(ctx, command, pool).await
     } else if name == link::name() {
         link::handle_command(ctx, command).await
+    } else if name == gif::name() {
+        gif::handle_command(ctx, command, config.tenor.token.as_str()).await
     };
 }

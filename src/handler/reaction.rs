@@ -1,6 +1,6 @@
 use deadpool_postgres::Pool;
 use serenity::{
-    model::prelude::{GuildId, Reaction, UserId},
+    model::prelude::{GuildId, Message, Reaction, UserId},
     prelude::Context,
 };
 
@@ -144,9 +144,29 @@ async fn extract_reaction_data(
     let message =
         reaction.message(&ctx.http).await.map_err(|err| err.to_string())?;
 
-    let author_id = util::get_bot_message_author_id(&ctx, &guild_id, &message)
+    let author_id = get_bot_message_author_id(&message)
         .await
         .map_err(|err| err.to_string())?;
 
     Ok((UserId::from(author_id), guild_id))
+}
+
+async fn get_bot_message_author_id(
+    message: &Message,
+) -> Result<UserId, String> {
+    unsafe {
+        match BOT_USER_ID {
+            | None => return Err(String::from("Bot user not available")),
+            | Some(id) => {
+                if id != message.author.id {
+                    return Err(String::from("Not a memsther message"));
+                }
+            }
+        }
+    }
+    let interaction = match &message.interaction {
+        | Some(interaction) => interaction,
+        | None => return Err(String::from("Not a memsther message")),
+    };
+    Ok(interaction.user.id)
 }
