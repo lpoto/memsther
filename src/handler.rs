@@ -7,17 +7,22 @@ use serenity::{
     prelude::{Context, EventHandler},
 };
 
-use crate::datastore::Datastore;
+use crate::{configuration, datastore::Datastore};
 mod application_command;
 mod reaction;
 
 pub struct Handler {
+    config: configuration::Configuration,
     datastore: Datastore,
 }
 
 impl Handler {
-    pub fn new(datastore: Datastore) -> Handler {
+    pub async fn new(config: configuration::Configuration) -> Handler {
+        let datastore = Datastore::new(&config.postgres);
+        datastore.migrate().await;
+
         Handler {
+            config,
             datastore,
         }
     }
@@ -56,8 +61,13 @@ impl EventHandler for Handler {
         }
         if let Interaction::ApplicationCommand(command) = interaction {
             let pool = &self.datastore.pool;
-            application_command::handle_appliaction_command(ctx, command, pool)
-                .await;
+            application_command::handle_appliaction_command(
+                ctx,
+                command,
+                pool,
+                &self.config,
+            )
+            .await;
         }
     }
 

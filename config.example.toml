@@ -1,5 +1,8 @@
 [discord]
-token="your-discord-token"
+token="<discord-token>"
+
+[tenor]
+token="<tenor-api-token>"
 
 [postgres]
 user="postgres"

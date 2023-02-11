@@ -88,16 +88,16 @@ pub async fn handle_command(
     }
 
     // NOTE: mention the user who sent the meme
-    let txt = format!("<@!{}> just sent a meme!", command.user.id);
     let content = command
         .data
         .options
         .iter()
         .find(|option| option.kind == CommandOptionType::String)
-        .map_or(txt.clone(), |content| {
-            content.value.as_ref().map_or(txt.clone(), |value| {
-                format!("{}\n\n{}", txt.clone(), value.to_string())
-            })
+        .map_or(String::new(), |content| {
+            content
+                .value
+                .as_ref()
+                .map_or(String::new(), |value| format!("{}", value.to_string()))
         });
 
     defer_meme_response(&ctx, &command).await;

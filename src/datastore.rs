@@ -4,17 +4,10 @@ use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use tokio_postgres::NoTls;
 
 pub mod user;
+use crate::configuration;
 
 mod embedded {
     refinery::embed_migrations!("migrations");
-}
-
-#[derive(serde::Deserialize)]
-pub struct Configuration {
-    host: String,
-    user: String,
-    password: String,
-    dbname: String,
 }
 
 pub struct Datastore {
@@ -25,13 +18,13 @@ impl Datastore {
     /// Create a new Datastore object that handles
     /// the postgresql databse pool and panic
     /// when the pool could not be created.
-    pub fn new(config: Configuration) -> Datastore {
+    pub fn new(config: &configuration::Postgres) -> Datastore {
         let mut dp_config = Config::new();
         let dbname = config.dbname.clone();
-        dp_config.host = Some(config.host);
-        dp_config.user = Some(config.user);
-        dp_config.password = Some(config.password);
-        dp_config.dbname = Some(config.dbname);
+        dp_config.host = Some(config.host.clone());
+        dp_config.user = Some(config.user.clone());
+        dp_config.password = Some(config.password.clone());
+        dp_config.dbname = Some(config.dbname.clone());
 
         dp_config.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,

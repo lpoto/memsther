@@ -1,33 +1,41 @@
+use rand::{seq::SliceRandom, thread_rng};
+use reqwest::Response;
 use serenity::{
-    model::{
-        application::command::Command,
-        prelude::{
-            command::CommandOptionType,
-            interaction::{
-                application_command::ApplicationCommandInteraction,
-                MessageFlags,
-            },
-            ReactionType,
+    model::prelude::{
+        command::{Command, CommandOptionType},
+        interaction::{
+            application_command::ApplicationCommandInteraction, MessageFlags,
         },
+        ReactionType,
     },
     prelude::Context,
 };
 
 use crate::util;
 
-pub fn name() -> String { String::from("link") }
-pub fn description() -> String { String::from("Send a link") }
+pub fn name() -> String { String::from("gif") }
+pub fn description() -> String { String::from("Send a gif") }
 
-/// Register the link command, it has a required
-/// string option, which should contain a valid url.
+#[derive(serde::Deserialize)]
+struct GifResponse {
+    data: Vec<Gif>,
+}
+
+#[derive(serde::Deserialize)]
+struct Gif {
+    url: String,
+}
+
+/// Register the hif command, it has a required
+/// string option, which should contain some keywords, so we may find a gif.
 pub async fn register(ctx: &Context) {
     log::trace!("Registering '{}' command ...", name());
     match Command::create_global_application_command(&ctx.http, |command| {
         command.name(name()).description(description()).create_option(
             |option| {
                 option
-                    .name("link")
-                    .description("The link to be sent")
+                    .name("keywords")
+                    .description("The keywords to find the gif by")
                     .kind(CommandOptionType::String)
                     .required(true)
             },
@@ -42,13 +50,10 @@ pub async fn register(ctx: &Context) {
     }
 }
 
-/// Handle the link application command. This expects the command name to match
-/// the value returned from the `name()` function. Responds to the
-/// provided command with the provided attachment and content, also
-/// mentions the user who used the command.
 pub async fn handle_command(
     ctx: Context,
     command: ApplicationCommandInteraction,
+    tenor_token: &str,
 ) {
     log::trace!("Running '{}' command ...", name());
     // NOTE: ensure the correct application command interaction
@@ -62,7 +67,7 @@ pub async fn handle_command(
         );
         return;
     }
-    let url = match command
+    let keywords = match command
         .data
         .options
         .iter()
@@ -71,46 +76,26 @@ pub async fn handle_command(
         | Some(value) => match &value.value {
             | Some(url) => url.to_string(),
             | None => {
-                log::warn!("Received link command with no string option");
+                log::warn!("Received gif command with no string option");
                 return;
             }
         },
         | None => {
-            log::warn!("Received link command with no string option");
+            log::warn!("Received gif command with no string option");
             return;
         }
     };
-    if !util::is_url(url.as_str()) {
-        log::warn!("Received invalid link");
-        respond_to_invalid_url(&ctx, &command, url.as_str()).await;
-        return;
-    }
-    respond_to_valid_url(&ctx, &command, url.as_str()).await;
-}
-
-async fn respond_to_invalid_url(
-    ctx: &Context,
-    command: &ApplicationCommandInteraction,
-    url: &str,
-) {
-    match command
-        .create_interaction_response(&ctx.http, |response| {
-            response.interaction_response_data(|message| {
-                message
-                    .content(format!("_{}_  is not a valid link", url))
-                    .flags(MessageFlags::EPHEMERAL)
-            })
-        })
-        .await
-    {
-        | Ok(_) => {
-            log::trace!("Successfully responded to invalid link");
+    let tenor_url = get_tenor_url(keywords, tenor_token);
+    match get_gif_url(tenor_url).await {
+        | Ok(url) => respond_with_gif_url(&ctx, &command, url.as_str()).await,
+        | Err(why) => {
+            log::warn!("Failed to fetch a gif: {}", why);
+            respond_on_error(&ctx, &command).await;
         }
-        | Err(why) => log::warn!("Failed to respond to invalid link: {why}"),
     };
 }
 
-async fn respond_to_valid_url(
+async fn respond_with_gif_url(
     ctx: &Context,
     command: &ApplicationCommandInteraction,
     url: &str,
@@ -122,11 +107,11 @@ async fn respond_to_valid_url(
         .await
     {
         | Ok(_) => {
-            log::trace!("Successfully responded with a valid link");
+            log::trace!("Successfully responded with a valid gif");
             match command.get_interaction_response(&ctx.http).await {
                 | Err(_) => (),
                 | Ok(message) => {
-                    // NOTE: On successful link response, react to the sent
+                    // NOTE: On successful meme gif, react to the sent
                     // message with thumbs up and thumbs down.
                     for reaction in
                         vec![util::get_thumbs_up(), util::get_thumbs_down()]
@@ -145,6 +130,47 @@ async fn respond_to_valid_url(
                 }
             };
         }
-        | Err(why) => log::warn!("Failed to respond to a valid link: {}", why),
+        | Err(why) => log::warn!("Failed to respond with a valid gif: {}", why),
     };
+}
+
+async fn respond_on_error(
+    ctx: &Context,
+    command: &ApplicationCommandInteraction,
+) {
+    match command
+        .create_interaction_response(&ctx.http, |response| {
+            response.interaction_response_data(|message| {
+                message
+                    .content("Could not find any gifs")
+                    .flags(MessageFlags::EPHEMERAL)
+            })
+        })
+        .await
+    {
+        | Ok(_) => {
+            log::trace!("Successfully responded on gif error");
+        }
+        | Err(why) => log::warn!("Failed to respond to gif error: {}", why),
+    };
+}
+
+async fn get_gif_url(tenor_url: String) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let res: Response =
+        client.get(tenor_url).send().await.map_err(|err| err.to_string())?;
+    let gif_data: GifResponse =
+        res.json().await.map_err(|err| err.to_string())?;
+
+    if gif_data.data.len() == 0 {
+        return Err(String::from("Found no gif results"));
+    }
+    Ok(gif_data.data.choose(&mut thread_rng()).unwrap().url.clone())
+}
+
+fn get_tenor_url(keywords: String, token: &str) -> String {
+    format!(
+        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=25&lang=en",
+        keywords, token
+    )
 }
