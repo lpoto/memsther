@@ -3,8 +3,8 @@ version: '3.8'
 services:
   memsther:
     build:
-      context: ../
-      dockerfile: .dockerenv/Dockerfile
+      context: ./
+      dockerfile: ./Dockerfile
     environment:
       RUST_LOG: "warn,memsther=trace"
     command: "-- /usr/conf/config.toml"

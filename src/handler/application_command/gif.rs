@@ -182,7 +182,7 @@ async fn get_gif_url(giphy_url: String) -> Result<String, String> {
 
 fn get_giphy_url(keywords: String, token: &str) -> String {
     format!(
-        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=1&lang=en",
+        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=10&lang=en",
         keywords, token
     )
 }
