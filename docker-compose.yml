@@ -6,10 +6,10 @@ services:
       context: ./
       dockerfile: ./Dockerfile
     environment:
-      RUST_LOG: "warn,memsther=trace"
+      RUST_LOG: "warn,memsther=info"
     command: "-- /usr/conf/config.toml"
     volumes:
-      - ../config.toml:/usr/conf/config.toml
+      - ./config.toml:/usr/conf/config.toml
     depends_on:
       - postgres
     networks:
