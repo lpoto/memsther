@@ -85,9 +85,16 @@ pub async fn handle_command(
             return;
         }
     };
-    let giphy_url = get_giphy_url(keywords, giphy_token);
+    let giphy_url = get_giphy_url(keywords.clone(), giphy_token);
+
+    log::trace!("Fetching gifs for keywords: {}", keywords);
+
     match get_gif_url(giphy_url).await {
-        | Ok(url) => respond_with_gif_url(&ctx, &command, url.as_str()).await,
+        | Ok(url) => {
+            log::trace!("Successfully fetched a gif: {}", url);
+
+            respond_with_gif_url(&ctx, &command, url.as_str()).await
+        }
         | Err(why) => {
             log::warn!("Failed to fetch a gif: {}", why);
             respond_on_error(&ctx, &command).await;
@@ -159,8 +166,13 @@ async fn get_gif_url(giphy_url: String) -> Result<String, String> {
     let client = reqwest::Client::new();
     let res: Response =
         client.get(giphy_url).send().await.map_err(|err| err.to_string())?;
+
+    log::trace!("Successfully fetched gifs data, parsing it ...");
+
     let gif_data: GifResponse =
         res.json().await.map_err(|err| err.to_string())?;
+
+    log::trace!("Fetched {} gifs", gif_data.data.len());
 
     match gif_data.data.choose(&mut thread_rng()) {
         | Some(gif) => Ok(gif.url.clone()),
@@ -170,7 +182,7 @@ async fn get_gif_url(giphy_url: String) -> Result<String, String> {
 
 fn get_giphy_url(keywords: String, token: &str) -> String {
     format!(
-        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=5&lang=en",
+        "https://api.giphy.com/v1/gifs/search?q={}&api_key={}&limit=15&lang=en",
         keywords, token
     )
 }
