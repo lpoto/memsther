@@ -28,6 +28,43 @@ pub async fn get_score(
     }
 }
 
+/// Gets a vector of userId, score pairs, where
+/// the resuls are descendingly sorted by the scores,
+/// and limited by the provided limit.
+/// Returns only results for the provided guildID.
+pub async fn get_scores(
+    pool: &Pool,
+    guild_id: GuildId,
+    limit: u16,
+) -> Result<Vec<(UserId, i64)>, String> {
+    log::trace!("Fetching top {} scores for guild: {}", limit, guild_id);
+    let client = pool.get().await.map_err(|err| err.to_string())?;
+    client
+        .query(
+            r#"
+            SELECT id, score FROM "user"
+            WHERE "user".guild_id = $1 AND
+                "user".score > 0
+            ORDER BY "user".score DESC
+            LIMIT $2;
+            "#,
+            &[&(i64::from(guild_id)), &(i64::from(limit))],
+        )
+        .await
+        .map_err(|err| err.to_string())
+        .map(|rows| {
+            // NOTE: map the rows into a vector of userId, score tuples
+            rows.iter()
+                .map(|row| {
+                    (
+                        UserId::from(row.get::<usize, i64>(0) as u64),
+                        i64::from(row.get::<usize, i64>(1)),
+                    )
+                })
+                .collect::<Vec<(UserId, i64)>>()
+        })
+}
+
 /// Increment the score of the user identified by the provided
 /// id by 1.
 pub async fn increment_score(
