@@ -5,6 +5,8 @@ RUN rustup target add x86_64-unknown-linux-musl
 RUN apt update && apt install -y \
     musl-tools \
     musl-dev \
+    ca-certificates \
+    tzdata \
     pkg-config
 
 RUN update-ca-certificates
@@ -30,6 +32,8 @@ RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM scratch
 
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
