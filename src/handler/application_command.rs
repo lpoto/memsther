@@ -10,6 +10,7 @@ use serenity::{
 use crate::configuration::Configuration;
 
 pub mod gif;
+pub mod leaderboard;
 pub mod link;
 pub mod meme;
 pub mod score;
@@ -21,8 +22,13 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
         .await
         .map_err(|err| format!("Failed to fetch global commands: {:?}", err))?;
 
-    let to_register =
-        vec![meme::name(), score::name(), link::name(), gif::name()];
+    let to_register = vec![
+        meme::name(),
+        score::name(),
+        link::name(),
+        gif::name(),
+        leaderboard::name(),
+    ];
 
     log::debug!("Registering slash commands ...");
     for command in commands.iter() {
@@ -38,6 +44,10 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
                 })?;
         }
     }
+    // NOTE: register only slash commands that are not yet present in
+    // the already registered commands.
+    // This is a safety to avoid being blocked from discord for registering
+    // commands too often.
     if commands.iter().find(|command| command.name == meme::name()).is_none() {
         meme::register(ctx).await;
     };
@@ -50,6 +60,13 @@ pub async fn register(ctx: &Context) -> Result<(), String> {
     if commands.iter().find(|command| command.name == gif::name()).is_none() {
         gif::register(ctx).await;
     };
+    if commands
+        .iter()
+        .find(|command| command.name == leaderboard::name())
+        .is_none()
+    {
+        leaderboard::register(ctx).await;
+    };
 
     log::info!("Slash commands registered");
     return Ok(());
@@ -59,7 +76,7 @@ pub async fn handle_appliaction_command(
     ctx: Context,
     command: ApplicationCommandInteraction,
     pool: &Pool,
-    config: &Configuration
+    config: &Configuration,
 ) {
     log::trace!("Handling command interaction: {:?}", command.data.name,);
     let name = command.data.name.to_string();
@@ -71,5 +88,7 @@ pub async fn handle_appliaction_command(
         link::handle_command(ctx, command).await
     } else if name == gif::name() {
         gif::handle_command(ctx, command, config.giphy.token.as_str()).await
+    } else if name == leaderboard::name() {
+        leaderboard::handle_command(ctx, command, pool).await
     };
 }
