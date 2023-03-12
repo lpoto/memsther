@@ -7,8 +7,6 @@ use serenity::{
     prelude::Context,
 };
 
-use crate::configuration::Configuration;
-
 pub mod gif;
 pub mod leaderboard;
 pub mod link;
@@ -76,7 +74,7 @@ pub async fn handle_appliaction_command(
     ctx: Context,
     command: ApplicationCommandInteraction,
     pool: &Pool,
-    config: &Configuration,
+    giphy_key: &String,
 ) {
     log::trace!("Handling command interaction: {:?}", command.data.name,);
     let name = command.data.name.to_string();
@@ -87,7 +85,7 @@ pub async fn handle_appliaction_command(
     } else if name == link::name() {
         link::handle_command(ctx, command).await
     } else if name == gif::name() {
-        gif::handle_command(ctx, command, config.giphy.token.as_str()).await
+        gif::handle_command(ctx, command, giphy_key.as_str()).await
     } else if name == leaderboard::name() {
         leaderboard::handle_command(ctx, command, pool).await
     };
