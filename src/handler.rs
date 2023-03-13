@@ -1,3 +1,5 @@
+use std::env;
+
 use serenity::{
     async_trait,
     model::{
@@ -7,22 +9,25 @@ use serenity::{
     prelude::{Context, EventHandler},
 };
 
-use crate::{configuration, datastore::Datastore};
+use crate::datastore::Datastore;
 mod application_command;
 mod reaction;
 
 pub struct Handler {
-    config: configuration::Configuration,
+    giphy_key: String,
     datastore: Datastore,
 }
 
 impl Handler {
-    pub async fn new(config: configuration::Configuration) -> Handler {
-        let datastore = Datastore::new(&config.postgres);
+    pub async fn new() -> Handler {
+        let giphy_key =
+            env::var("GIPHY_KEY").expect("missing GIPHY_KEY env variable");
+
+        let datastore = Datastore::new();
         datastore.migrate().await;
 
         Handler {
-            config,
+            giphy_key,
             datastore,
         }
     }
@@ -65,7 +70,7 @@ impl EventHandler for Handler {
                 ctx,
                 command,
                 pool,
-                &self.config,
+                &self.giphy_key,
             )
             .await;
         }

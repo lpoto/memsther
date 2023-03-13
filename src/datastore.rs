@@ -1,10 +1,10 @@
-use std::ops::DerefMut;
+use std::{env, ops::DerefMut};
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use tokio_postgres::NoTls;
+use url::Url;
 
 pub mod user;
-use crate::configuration;
 
 mod embedded {
     refinery::embed_migrations!("migrations");
@@ -18,14 +18,36 @@ impl Datastore {
     /// Create a new Datastore object that handles
     /// the postgresql databse pool and panic
     /// when the pool could not be created.
-    pub fn new(config: &configuration::Postgres) -> Datastore {
+    pub fn new() -> Datastore {
         let mut dp_config = Config::new();
-        let dbname = config.dbname.clone();
-        dp_config.host = Some(config.host.clone());
-        dp_config.user = Some(config.user.clone());
-        dp_config.password = Some(config.password.clone());
-        dp_config.dbname = Some(config.dbname.clone());
+        let database_url = env::var("DATABASE_URL")
+            .expect("missing DATABASE_URL env variable");
+        let url = Url::parse(database_url.as_str())
+            .expect("invalid DATABASE_URL env variable");
+        let user = url.username().to_string();
+        let password = url
+            .password()
+            .ok_or("")
+            .expect("invalid password in DATABASE_URL")
+            .to_string();
+        let host = url
+            .host()
+            .ok_or("")
+            .expect("invalid host in DATABASE_URL")
+            .to_string();
+        let port = url.port().ok_or("").expect("invalid port in DATABASE_URL");
+        let dbname = url
+            .path_segments()
+            .expect("invalid database name in DATABASE_URL")
+            .next()
+            .unwrap()
+            .to_string();
 
+        dp_config.host = Some(host);
+        dp_config.user = Some(user);
+        dp_config.port = Some(port);
+        dp_config.password = Some(password);
+        dp_config.dbname = Some(dbname.clone());
         dp_config.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
             ..Default::default()
