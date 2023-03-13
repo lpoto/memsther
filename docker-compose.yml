@@ -2,11 +2,18 @@ version: '3.8'
 
 services:
   memsther:
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
+    image: ghcr.io/lpoto/memsther:latest
+    #build:
+      #context: ./
+      #dockerfile: ./Dockerfile
     environment:
       RUST_LOG: "warn,memsther=info"
+      DISCORD_TOKEN: <discord-bot-token>
+      GIPHY_KEY: <giphy-api-key>
+      POSTGRES_DB: memsther
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
     command: "-- /usr/conf/config.toml"
     volumes:
       - ./config.toml:/usr/conf/config.toml
